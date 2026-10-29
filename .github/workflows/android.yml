@@ -1,10 +1,11 @@
+
 name: Android CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
@@ -15,18 +16,32 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          java-version: "17"
+          distribution: "temurin"
           cache: gradle
 
-      - name: Check Android Gradle wrapper
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Sync Capacitor Android
+        run: npx cap sync android
+
+      - name: Verify Gradle wrapper and Capacitor files
         run: |
-          pwd
-          ls -la android
           test -f android/gradlew
+          test -f android/capacitor-cordova-android-plugins/cordova.variables.gradle
 
       - name: Grant execute permission for gradlew
         run: chmod +x android/gradlew
@@ -41,8 +56,3 @@ jobs:
           name: edutrack-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
-
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    - name: Build with Gradle
-      run: ./gradlew build
